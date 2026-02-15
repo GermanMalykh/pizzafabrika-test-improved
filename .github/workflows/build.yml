@@ -97,8 +97,18 @@ jobs:
       - name: Install Android SDK
         uses: malinskiy/action-android/install-sdk@release/0.1.6
 
-      - name: Appium Server Setup
-        uses: moatazeldebsy/Appium-Server-GitHub-Action@V1.0.8
+      - name: Setup Node.js
+        uses: actions/setup-node@v6.2.0
+        with:
+          node-version: "20"
+
+      - name: Install and run Appium Server
+        run: |
+          npm install -g appium
+          appium driver install uiautomator2
+          appium --log appium.log &
+          sleep 5
+          appium -v
 
       - name: Run mobile tests (emulator + Appium)
         uses: malinskiy/action-android/emulator-run-cmd@release/0.1.6
