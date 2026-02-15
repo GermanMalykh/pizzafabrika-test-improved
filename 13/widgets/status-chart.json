@@ -1,0 +1,1 @@
+[{"uid":"41892c5902c3db7e","name":"Сохранение состояния корзины при смене города","time":{"start":1771190818943,"stop":1771190825088,"duration":6145},"status":"failed","severity":"normal"},{"uid":"2a3901965925c7e3","name":"Добавление товара в корзину","time":{"start":1771190801309,"stop":1771190818827,"duration":17518},"status":"failed","severity":"normal"}]
