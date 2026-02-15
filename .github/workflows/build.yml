@@ -1,0 +1,192 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: write
+
+env:
+  ALLURE_HISTORY_RETENTION: 10
+
+jobs:
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Check Gradle Wrapper JAR
+        run: |
+          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+            echo "::error::gradle/wrapper/gradle-wrapper.jar отсутствует. Выполните 'gradle wrapper' и добавьте файл в репозиторий."
+            exit 1
+          fi
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v5.2.0
+        with:
+          distribution: "zulu"
+          java-version: "17"
+          cache: "gradle"
+
+      - name: Setup Chrome
+        uses: browser-actions/setup-chrome@v2.1.0
+
+      - name: Run tests
+        run: ./gradlew test --no-daemon -Dselenide.headless=true -Dchromeoptions.args=--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--headless=new
+
+      - name: Prepare allure-results
+        if: always()
+        run: |
+          mkdir -p allure-results
+          if [ -d "build/allure-results" ]; then
+            cp -r build/allure-results/. allure-results/ 2>/dev/null || true
+          fi
+          ls -la allure-results/ || true
+
+      - name: Upload Allure results
+        if: always()
+        uses: actions/upload-artifact@v6.0.0
+        with:
+          name: allure-results
+          path: allure-results
+          if-no-files-found: ignore
+          retention-days: 30
+
+  report:
+    name: Generate Allure Report
+    needs: test
+    if: always() && (needs.test.result == 'success' || needs.test.result == 'failure')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Checkout gh-pages
+        id: checkout_gh_pages
+        uses: actions/checkout@v6.0.2
+        with:
+          ref: gh-pages
+          path: gh-pages
+        continue-on-error: true
+
+      - name: Prepare gh-pages when branch is missing
+        if: steps.checkout_gh_pages.outcome == 'failure'
+        run: mkdir -p gh-pages
+
+      - name: Download Allure Results
+        uses: actions/download-artifact@v7.0.0
+        with:
+          name: allure-results
+          path: allure-results
+
+      - name: List Allure results (debug)
+        run: |
+          ls -la allure-results/ 2>/dev/null || true
+          echo "---"
+          ls allure-results/*.json 2>/dev/null | wc -l || echo "0"
+
+      - name: Build Allure report
+        if: always()
+        uses: simple-elf/allure-report-action@v1.13
+        with:
+          allure_results: allure-results
+          allure_history: allure-history
+          gh_pages: gh-pages
+
+      - name: Prepare allure-history for publish
+        if: always()
+        run: |
+          sudo chmod -R a+w allure-history 2>/dev/null || true
+          sudo rm -rf allure-history/.git 2>/dev/null || true
+
+      - name: Keep only last ${{ env.ALLURE_HISTORY_RETENTION }} report runs
+        if: always()
+        run: |
+          cd allure-history
+          retention=${{ env.ALLURE_HISTORY_RETENTION }}
+          count=$(ls -d [0-9]* 2>/dev/null | wc -l)
+          if [ "$count" -gt "$retention" ]; then
+            echo "Keeping only $retention latest runs, removing $((count - retention)) old run(s)"
+            ls -d [0-9]* 2>/dev/null | sort -n | head -n $((count - retention)) | xargs rm -rf
+          fi
+          ls -la
+
+      - name: Publish report to GitHub Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v4.0.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: allure-history
+
+      - name: Upload current report for notification
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report-current
+          path: allure-history/${{ github.run_number }}/
+
+  notify:
+    name: Notify Telegram
+    needs: report
+    if: always() && (needs.report.result == 'success' || needs.report.result == 'failure')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Download current report for notification
+        uses: actions/download-artifact@v4
+        with:
+          name: allure-report-current
+          path: allure-report-current
+
+      - name: Check allure-notifications JAR
+        run: |
+          if ! ls notifications/allure-notifications*.jar 1>/dev/null 2>&1; then
+            echo "::error::В папке notifications/ не найден allure-notifications*.jar. Добавьте JAR в репозиторий."
+            exit 1
+          fi
+          ls -la notifications/allure-notifications*.jar
+
+      - name: Prepare report link
+        id: report_link
+        run: |
+          OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "url=https://${OWNER_LOWER}.github.io/${{ github.event.repository.name }}/${{ github.run_number }}/index.html#" >> $GITHUB_OUTPUT
+
+      - name: Prepare environment label
+        id: env_label
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "env_display=Pull requests name: ${{ github.event.pull_request.title }}" >> $GITHUB_OUTPUT
+          else
+            echo "env_display=Merge to main" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send Telegram notification
+        env:
+          NOTIFY_PROJECT: ${{ github.event.repository.name }}
+          NOTIFY_ENVIRONMENT: ${{ steps.env_label.outputs.env_display }}
+          NOTIFY_COMMENT: "Run #${{ github.run_number }}"
+          NOTIFY_REPORT_LINK: ${{ steps.report_link.outputs.url }}
+          NOTIFY_ALLURE_FOLDER: "allure-report-current/"
+          NOTIFY_LANGUAGE: "ru"
+          NOTIFY_LOGO: "notifications/logo.png"
+          TG_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          chmod +x scripts/send-allure-notification.sh
+          bash scripts/send-allure-notification.sh
+        continue-on-error: true
