@@ -10,5 +10,5 @@ while [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" != "1
 done
 echo "Emulator ready."
 
-# Запускаем только mobile-тесты
-./gradlew test --no-daemon -PmobileOnly
+# Appium 2/3 в CI использует base path / (не /wd/hub)
+./gradlew test --no-daemon -PmobileOnly -Dmobile.appium.url=http://localhost:4723
