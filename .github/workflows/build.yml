@@ -22,11 +22,11 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x gradlew
 
-      - name: Restore Gradle wrapper JAR
+      - name: Check Gradle wrapper JAR
         run: |
           if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
-            curl -sL -o gradle/wrapper/gradle-wrapper.jar \
-              https://github.com/gradle/gradle/raw/v8.5.0/gradle/wrapper/gradle-wrapper.jar
+            echo "::error::gradle/wrapper/gradle-wrapper.jar отсутствует. Выполните 'gradle wrapper' и закоммитьте файл."
+            exit 1
           fi
 
       - name: Set up JDK 17
@@ -36,12 +36,8 @@ jobs:
           java-version: "17"
           cache: "gradle"
 
-      - name: Install Chrome (headless)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y chromium-browser
-          sudo ln -sf /usr/bin/chromium-browser /usr/bin/google-chrome || true
-          google-chrome --version || chromium-browser --version
+      - name: Setup Chrome
+        uses: browser-actions/setup-chrome@v2.1.0
 
       - name: Run tests
         run: ./gradlew test --no-daemon -Dselenide.headless=true -Dchromeoptions.args=--no-sandbox,--disable-dev-shm-usage,--disable-gpu,--headless=new
