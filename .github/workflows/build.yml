@@ -113,7 +113,7 @@ jobs:
       - name: Run mobile tests (emulator + Appium)
         uses: malinskiy/action-android/emulator-run-cmd@release/0.1.6
         with:
-          cmd: chmod +x scripts/ci-run-tests.sh && bash scripts/ci-run-tests.sh
+          cmd: bash scripts/ci-run-tests.sh
           api: 31
           tag: google_apis
           abi: x86_64
