@@ -1,0 +1,3 @@
+"DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
+"","21360","Добавление товара в корзину","","Sun Feb 15 15:57:37 UTC 2026","failed","Sun Feb 15 15:57:59 UTC 2026","","tests_ui.AddToCartTest","tests_ui.AddToCartTest","addPizzaToCartTest"
+"","5954","Сохранение состояния корзины при смене города","","Sun Feb 15 15:57:59 UTC 2026","failed","Sun Feb 15 15:58:05 UTC 2026","","tests_ui.CityTest","tests_ui.CityTest","keepCartWhenCityChangesTest"
