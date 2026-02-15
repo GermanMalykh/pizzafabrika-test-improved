@@ -22,11 +22,15 @@ repositories {
 }
 
 dependencies{
-    testImplementation(
+    compileOnly 'org.projectlombok:lombok:1.18.42'
+    annotationProcessor 'org.projectlombok:lombok:1.18.42'
+
+    implementation(
             'com.codeborne:selenide:7.13.0',
             'org.junit.jupiter:junit-jupiter:5.10.0',
             'io.qameta.allure:allure-selenide:2.19.0',
-            'org.slf4j:slf4j-simple:1.7.32'
+            'org.slf4j:slf4j-simple:1.7.32',
+            'org.projectlombok:lombok:1.18.42'
     )
 }
 
