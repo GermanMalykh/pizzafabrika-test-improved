@@ -12,6 +12,8 @@
 
 # Package Files #
 *.jar
+!gradle/wrapper/gradle-wrapper.jar
+!notifications/allure-notifications*.jar
 *.war
 *.nar
 *.ear
@@ -27,3 +29,6 @@ replay_pid*
 
 /build/
 .gradle/
+
+# Генерируется в CI, не коммитить (могут попасть секреты)
+notifications/config.json
