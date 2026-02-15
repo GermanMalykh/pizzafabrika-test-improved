@@ -19,6 +19,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6.0.2
 
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
       - name: Set up JDK 17
         uses: actions/setup-java@v5.2.0
         with:
@@ -55,7 +58,7 @@ jobs:
           retention-days: 30
 
   report:
-    name: Allure Report
+    name: Generate Allure Report
     needs: test
     if: always() && (needs.test.result == 'success' || needs.test.result == 'failure')
     runs-on: ubuntu-latest
