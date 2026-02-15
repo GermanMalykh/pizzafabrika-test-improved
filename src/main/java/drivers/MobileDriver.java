@@ -47,7 +47,8 @@ public class MobileDriver implements WebDriverProvider {
                 .setPlatformVersion(Config.getProperty("mobile.os.version"))
                 .setApp(getAppPath())
                 .setAppPackage(Config.getProperty("mobile.app.package"))
-                .setAppActivity(Config.getProperty("mobile.app.activity"));
+                .setAppActivity(Config.getProperty("mobile.app.activity"))
+                .setNoSign(true);
         return new AndroidDriver(getAppiumServerUrl(), options);
     }
 
