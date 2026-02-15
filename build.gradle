@@ -30,12 +30,20 @@ dependencies{
             'org.junit.jupiter:junit-jupiter:5.10.0',
             'io.qameta.allure:allure-selenide:2.19.0',
             'org.slf4j:slf4j-simple:1.7.32',
-            'org.projectlombok:lombok:1.18.42'
+            'org.projectlombok:lombok:1.18.42',
+
+            'com.codeborne:selenide-appium:7.13.0',
+            'org.jetbrains:annotations:26.0.2'
     )
 }
 
 test {
     useJUnitPlatform()
+    if (project.hasProperty('mobileOnly')) {
+        include '**/ExampleMobileTest*'
+    } else if (project.hasProperty('excludeMobile')) {
+        exclude '**/ExampleMobileTest*'
+    }
 }
 
 tasks.withType(JavaCompile).configureEach {
