@@ -25,7 +25,7 @@ jobs:
       - name: Check Gradle wrapper JAR
         run: |
           if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
-            echo "::error::gradle/wrapper/gradle-wrapper.jar отсутствует. Выполните 'gradle wrapper' и закоммитьте файл."
+            echo "::error::gradle/wrapper/gradle-wrapper.jar отсутствует. Выполните 'gradle wrapper' и добавьте файл в репозиторий."
             exit 1
           fi
 
