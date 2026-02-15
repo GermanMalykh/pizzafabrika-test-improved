@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -e
 
-# Ждём, пока эмулятор полностью загрузится
+# Ждём, пока эмулятор полностью загрузится (ADB может быть готов раньше UI)
 echo "Waiting for emulator to boot..."
 adb wait-for-device
-while [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" != "1" ]; do
+until adb shell getprop sys.boot_completed 2>/dev/null | grep -m 1 "1"; do
   echo "  Boot in progress..."
-  sleep 5
+  sleep 2
 done
 echo "Emulator ready."
 

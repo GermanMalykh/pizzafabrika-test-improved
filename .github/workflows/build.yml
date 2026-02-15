@@ -101,13 +101,18 @@ jobs:
         uses: actions/setup-node@v6.2.0
         with:
           node-version: "20"
+          cache: "npm"
 
       - name: Install and run Appium Server
         run: |
           npm install -g appium
           appium driver install uiautomator2
           appium --log appium.log &
-          sleep 5
+          echo "Waiting for Appium..."
+          for i in $(seq 1 30); do
+            nc -z 127.0.0.1 4723 && break
+            sleep 1
+          done
           appium -v
 
       - name: Run mobile tests (emulator + Appium)

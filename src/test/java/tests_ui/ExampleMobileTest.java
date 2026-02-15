@@ -3,7 +3,10 @@ package tests_ui;
 import com.codeborne.selenide.Condition;
 import com.codeborne.selenide.Configuration;
 import com.codeborne.selenide.appium.SelenideAppiumElement;
+import com.codeborne.selenide.logevents.SelenideLogger;
 import drivers.MobileDriver;
+import io.qameta.allure.selenide.AllureSelenide;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,6 +26,11 @@ public class ExampleMobileTest extends MobileDriver {
             petPhotoUrlInput = $(id(APP_ID + "createPhotoUrl")),
             petCreate = $(id(APP_ID + "btnCreate")),
             petEvetsText = $(id(APP_ID + "eventText"));
+
+    @BeforeAll
+    static void setupAllure() {
+        SelenideLogger.addListener("AllureSelenide", new AllureSelenide().screenshots(true));
+    }
 
     @BeforeEach
     void beforeEachSetup() {
