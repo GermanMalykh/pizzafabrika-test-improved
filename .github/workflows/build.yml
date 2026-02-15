@@ -128,3 +128,50 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
           publish_dir: allure-history
+
+      - name: Upload current report for notification
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report-current
+          path: allure-history/${{ github.run_number }}/
+
+
+  notify:
+    name: Notify Telegram
+    needs: report
+    if: always() && (needs.report.result == 'success' || needs.report.result == 'failure')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.2
+
+      - name: Download current report
+        uses: actions/download-artifact@v4
+        with:
+          name: allure-report-current
+          path: allure-report-current
+
+      - name: Check allure-notifications JAR
+        run: |
+          if ! ls notifications/allure-notifications*.jar 1>/dev/null 2>&1; then
+            echo "::error::В папке notifications/ не найден allure-notifications*.jar. Добавьте JAR в репозиторий."
+            exit 1
+          fi
+          ls -la notifications/allure-notifications*.jar
+
+      - name: Send Telegram notification
+        env:
+          NOTIFY_PROJECT: ${{ github.event.repository.name }}
+          NOTIFY_ENVIRONMENT: ${{ github.ref_name }}
+          NOTIFY_COMMENT: "Run #${{ github.run_number }}"
+          NOTIFY_REPORT_LINK: "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/${{ github.run_number }}/"
+          NOTIFY_ALLURE_FOLDER: "allure-report-current/"
+          NOTIFY_LANGUAGE: "ru"
+          NOTIFY_LOGO: "notifications/logo.png"
+          TG_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          chmod +x scripts/send-allure-notification.sh
+          bash scripts/send-allure-notification.sh
+        continue-on-error: true
