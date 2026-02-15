@@ -162,12 +162,27 @@ jobs:
           fi
           ls -la notifications/allure-notifications*.jar
 
+      - name: Prepare report link
+        id: report_link
+        run: |
+          OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "url=https://${OWNER_LOWER}.github.io/${{ github.event.repository.name }}/${{ github.run_number }}/index.html#" >> $GITHUB_OUTPUT
+
+      - name: Prepare environment label
+        id: env_label
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "env_display=Pull requests name: ${{ github.event.pull_request.title }}" >> $GITHUB_OUTPUT
+          else
+            echo "env_display=Merge to main" >> $GITHUB_OUTPUT
+          fi
+
       - name: Send Telegram notification
         env:
           NOTIFY_PROJECT: ${{ github.event.repository.name }}
-          NOTIFY_ENVIRONMENT: ${{ github.ref_name }}
+          NOTIFY_ENVIRONMENT: ${{ steps.env_label.outputs.env_display }}
           NOTIFY_COMMENT: "Run #${{ github.run_number }}"
-          NOTIFY_REPORT_LINK: "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/${{ github.run_number }}/"
+          NOTIFY_REPORT_LINK: ${{ steps.report_link.outputs.url }}
           NOTIFY_ALLURE_FOLDER: "allure-report-current/"
           NOTIFY_LANGUAGE: "ru"
           NOTIFY_LOGO: "notifications/logo.png"
